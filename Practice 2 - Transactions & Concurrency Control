@@ -1,0 +1,79 @@
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE StudentEnrollments';
+EXCEPTION
+   WHEN OTHERS THEN
+      NULL;
+END;
+/
+
+CREATE TABLE StudentEnrollments (
+    enrollment_id   INT PRIMARY KEY,
+    student_name    VARCHAR2(100) NOT NULL,
+    course_id       VARCHAR2(10)  NOT NULL,
+    enrollment_date DATE,
+    CONSTRAINT uq_student_course UNIQUE (student_name, course_id)
+);
+
+SET LINESIZE 150
+SET PAGESIZE 50
+COLUMN enrollment_id FORMAT 9999 HEADING 'ENROLLMENT_ID'
+COLUMN student_name  FORMAT A15 HEADING 'STUDENT_NAME'
+COLUMN course_id     FORMAT A10 HEADING 'COURSE_ID'
+COLUMN enrollment_date FORMAT A12 HEADING 'ENROLL_DATE'
+
+BEGIN
+   INSERT INTO StudentEnrollments VALUES (1, 'Ashish',  'CSE101', DATE '2024-07-01');
+   INSERT INTO StudentEnrollments VALUES (2, 'Smaran',  'CSE102', DATE '2024-07-01');
+   INSERT INTO StudentEnrollments VALUES (3, 'Vaibhav', 'CSE101', DATE '2024-07-01');
+   COMMIT;
+END;
+/
+
+PROMPT ===== Data after initial inserts =====
+SELECT * FROM StudentEnrollments;
+
+PROMPT ===== Attempting duplicate enrollment (Ashish in CSE101 again) =====
+BEGIN
+   INSERT INTO StudentEnrollments VALUES (4, 'Ashish', 'CSE101', DATE '2024-07-02');
+   COMMIT;
+EXCEPTION
+   WHEN OTHERS THEN
+      ROLLBACK;
+END;
+/
+
+SELECT * FROM StudentEnrollments;
+
+PROMPT ===== Demonstrating Row Lock with SELECT FOR UPDATE =====
+DECLARE
+   v_student StudentEnrollments%ROWTYPE;
+BEGIN
+   SELECT * INTO v_student
+   FROM StudentEnrollments
+   WHERE student_name = 'Ashish' AND course_id = 'CSE101'
+   FOR UPDATE;
+   COMMIT;
+END;
+/
+
+PROMPT (In real execution, User B update would be blocked until User A finishes)
+
+PROMPT ===== Consistency demonstration =====
+BEGIN
+   UPDATE StudentEnrollments
+   SET enrollment_date = DATE '2024-07-05'
+   WHERE student_name = 'Ashish' AND course_id = 'CSE101';
+   COMMIT;
+END;
+/
+
+BEGIN
+   UPDATE StudentEnrollments
+   SET enrollment_date = DATE '2024-07-10'
+   WHERE student_name = 'Ashish' AND course_id = 'CSE101';
+   COMMIT;
+END;
+/
+
+PROMPT ===== Final Data after Part C =====
+SELECT * FROM StudentEnrollments;
