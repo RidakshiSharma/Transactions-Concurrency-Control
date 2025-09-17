@@ -1,3 +1,4 @@
+-- Drop table if exists
 BEGIN
    EXECUTE IMMEDIATE 'DROP TABLE FeePayments';
 EXCEPTION
@@ -6,6 +7,7 @@ EXCEPTION
 END;
 /
 
+-- Create table
 CREATE TABLE FeePayments (
     payment_id   INT PRIMARY KEY,
     student_name VARCHAR2(100) NOT NULL,
@@ -14,11 +16,17 @@ CREATE TABLE FeePayments (
     payment_date DATE
 );
 
+-- Format output with proper columns
+SET LINESIZE 150
+SET PAGESIZE 50
 COLUMN payment_id FORMAT 9999 HEADING 'PAYMENT_ID'
 COLUMN student_name FORMAT A15 HEADING 'STUDENT_NAME'
 COLUMN amount FORMAT 999999.99 HEADING 'AMOUNT'
 COLUMN payment_date FORMAT A12 HEADING 'PAYMENT_DATE'
 
+------------------------------------------------------
+-- PART A: Insert multiple records in a transaction
+------------------------------------------------------
 BEGIN
    INSERT INTO FeePayments VALUES (1, 'Ashish', 5000.00, DATE '2024-06-01');
    INSERT INTO FeePayments VALUES (2, 'Smaran', 4500.00, DATE '2024-06-02');
@@ -27,12 +35,15 @@ BEGIN
 END;
 /
 
-PROMPT Data after Part A:
+PROMPT ===== Data after Part A =====
 SELECT * FROM FeePayments;
 
+------------------------------------------------------
+-- PART B: Transaction with invalid amount (ROLLBACK)
+------------------------------------------------------
 BEGIN
    INSERT INTO FeePayments VALUES (4, 'Kiran', 6000.00, DATE '2024-06-04');
-   INSERT INTO FeePayments VALUES (1, 'Ashish', -4000.00, DATE '2024-06-05');
+   INSERT INTO FeePayments VALUES (1, 'Ashish', -4000.00, DATE '2024-06-05'); -- Invalid
    COMMIT;
 EXCEPTION
    WHEN OTHERS THEN
@@ -40,12 +51,15 @@ EXCEPTION
 END;
 /
 
-PROMPT Data after Part B:
+PROMPT ===== Data after Part B =====
 SELECT * FROM FeePayments;
 
+------------------------------------------------------
+-- PART C: Transaction with NULL student_name (ROLLBACK)
+------------------------------------------------------
 BEGIN
    INSERT INTO FeePayments VALUES (5, 'Rohit', 7000.00, DATE '2024-06-06');
-   INSERT INTO FeePayments VALUES (6, NULL, 8000.00, DATE '2024-06-07');
+   INSERT INTO FeePayments VALUES (6, NULL, 8000.00, DATE '2024-06-07'); -- Invalid
    COMMIT;
 EXCEPTION
    WHEN OTHERS THEN
@@ -53,12 +67,15 @@ EXCEPTION
 END;
 /
 
-PROMPT Data after Part C:
+PROMPT ===== Data after Part C =====
 SELECT * FROM FeePayments;
 
+------------------------------------------------------
+-- PART D: Transaction with duplicate primary key (ROLLBACK)
+------------------------------------------------------
 BEGIN
    INSERT INTO FeePayments VALUES (7, 'Manish', 9000.00, DATE '2024-06-08');
-   INSERT INTO FeePayments VALUES (1, 'Duplicate', 10000.00, DATE '2024-06-09');
+   INSERT INTO FeePayments VALUES (1, 'Duplicate', 10000.00, DATE '2024-06-09'); -- Duplicate PK
    COMMIT;
 EXCEPTION
    WHEN OTHERS THEN
@@ -66,5 +83,5 @@ EXCEPTION
 END;
 /
 
-PROMPT Final Data after Part D:
+PROMPT ===== Final Data after Part D =====
 SELECT * FROM FeePayments;
