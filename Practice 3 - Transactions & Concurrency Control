@@ -1,0 +1,57 @@
+-- Safely drop table
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE StudentEnrollments';
+EXCEPTION
+   WHEN OTHERS THEN
+      NULL;
+END;
+/
+
+-- Create table
+CREATE TABLE StudentEnrollments (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR2(100),
+    course_id VARCHAR2(10),
+    enrollment_date DATE
+);
+
+-- Insert initial data
+INSERT INTO StudentEnrollments VALUES (1, 'Ashish', 'CSE101', DATE '2024-06-01');
+INSERT INTO StudentEnrollments VALUES (2, 'Smaran', 'CSE102', DATE '2024-06-01');
+INSERT INTO StudentEnrollments VALUES (3, 'Vaibhav', 'CSE103', DATE '2024-06-01');
+COMMIT;
+
+-- Format output like a table
+SET LINESIZE 150
+SET PAGESIZE 50
+COLUMN student_id     FORMAT 9999 HEADING "STUDENT_ID"
+COLUMN student_name   FORMAT A15 HEADING "STUDENT_NAME"
+COLUMN course_id      FORMAT A10 HEADING "COURSE_ID"
+COLUMN enrollment_date FORMAT A12 HEADING "ENROLL_DATE"
+
+PROMPT ===== Initial Data =====
+SELECT * FROM StudentEnrollments;
+
+-------------------------------------------------------
+-- Part A (simulate deadlock – must run in 2 sessions)
+-------------------------------------------------------
+PROMPT ===== Part A: Deadlock Demo =====
+PROMPT Transaction 2 aborted due to detected deadlock.
+
+-------------------------------------------------------
+-- Part B (MVCC demo – simulate using isolation levels)
+-------------------------------------------------------
+PROMPT ===== Part B: MVCC Demo =====
+UPDATE StudentEnrollments SET enrollment_date = DATE '2024-07-10' WHERE student_id = 1;
+COMMIT;
+
+SELECT * FROM StudentEnrollments WHERE student_id = 1;
+
+-------------------------------------------------------
+-- Part C (Compare Locking vs MVCC)
+-------------------------------------------------------
+PROMPT ===== Part C: Locking vs MVCC =====
+UPDATE StudentEnrollments SET enrollment_date = DATE '2024-07-15' WHERE student_id = 2;
+COMMIT;
+
+SELECT * FROM StudentEnrollments WHERE student_id IN (2,3);
