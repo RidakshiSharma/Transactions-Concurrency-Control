@@ -1,0 +1,70 @@
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE FeePayments';
+EXCEPTION
+   WHEN OTHERS THEN
+      NULL;
+END;
+/
+
+CREATE TABLE FeePayments (
+    payment_id   INT PRIMARY KEY,
+    student_name VARCHAR2(100) NOT NULL,
+    amount       DECIMAL(10,2)
+                  CONSTRAINT chk_amount_positive CHECK (amount > 0),
+    payment_date DATE
+);
+
+COLUMN payment_id FORMAT 9999 HEADING 'PAYMENT_ID'
+COLUMN student_name FORMAT A15 HEADING 'STUDENT_NAME'
+COLUMN amount FORMAT 999999.99 HEADING 'AMOUNT'
+COLUMN payment_date FORMAT A12 HEADING 'PAYMENT_DATE'
+
+BEGIN
+   INSERT INTO FeePayments VALUES (1, 'Ashish', 5000.00, DATE '2024-06-01');
+   INSERT INTO FeePayments VALUES (2, 'Smaran', 4500.00, DATE '2024-06-02');
+   INSERT INTO FeePayments VALUES (3, 'Vaibhav', 5500.00, DATE '2024-06-03');
+   COMMIT;
+END;
+/
+
+PROMPT Data after Part A:
+SELECT * FROM FeePayments;
+
+BEGIN
+   INSERT INTO FeePayments VALUES (4, 'Kiran', 6000.00, DATE '2024-06-04');
+   INSERT INTO FeePayments VALUES (1, 'Ashish', -4000.00, DATE '2024-06-05');
+   COMMIT;
+EXCEPTION
+   WHEN OTHERS THEN
+      ROLLBACK;
+END;
+/
+
+PROMPT Data after Part B:
+SELECT * FROM FeePayments;
+
+BEGIN
+   INSERT INTO FeePayments VALUES (5, 'Rohit', 7000.00, DATE '2024-06-06');
+   INSERT INTO FeePayments VALUES (6, NULL, 8000.00, DATE '2024-06-07');
+   COMMIT;
+EXCEPTION
+   WHEN OTHERS THEN
+      ROLLBACK;
+END;
+/
+
+PROMPT Data after Part C:
+SELECT * FROM FeePayments;
+
+BEGIN
+   INSERT INTO FeePayments VALUES (7, 'Manish', 9000.00, DATE '2024-06-08');
+   INSERT INTO FeePayments VALUES (1, 'Duplicate', 10000.00, DATE '2024-06-09');
+   COMMIT;
+EXCEPTION
+   WHEN OTHERS THEN
+      ROLLBACK;
+END;
+/
+
+PROMPT Final Data after Part D:
+SELECT * FROM FeePayments;
