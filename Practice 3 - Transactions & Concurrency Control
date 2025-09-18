@@ -1,57 +1,50 @@
--- Safely drop table
-BEGIN
-   EXECUTE IMMEDIATE 'DROP TABLE StudentEnrollments';
-EXCEPTION
-   WHEN OTHERS THEN
-      NULL;
-END;
-/
+DROP TABLE IF EXISTS StudentEnrollments;
 
--- Create table
 CREATE TABLE StudentEnrollments (
     student_id INT PRIMARY KEY,
-    student_name VARCHAR2(100),
-    course_id VARCHAR2(10),
+    student_name VARCHAR(100),
+    course_id VARCHAR(10),
     enrollment_date DATE
 );
 
--- Insert initial data
-INSERT INTO StudentEnrollments VALUES (1, 'Ashish', 'CSE101', DATE '2024-06-01');
-INSERT INTO StudentEnrollments VALUES (2, 'Smaran', 'CSE102', DATE '2024-06-01');
-INSERT INTO StudentEnrollments VALUES (3, 'Vaibhav', 'CSE103', DATE '2024-06-01');
-COMMIT;
+INSERT INTO StudentEnrollments VALUES
+(1, 'Ashish', 'CSE101', '2024-06-01'),
+(2, 'Smaran', 'CSE102', '2024-06-01'),
+(3, 'Vaibhav', 'CSE103', '2024-06-01');
 
--- Format output like a table
-SET LINESIZE 150
-SET PAGESIZE 50
-COLUMN student_id     FORMAT 9999 HEADING "STUDENT_ID"
-COLUMN student_name   FORMAT A15 HEADING "STUDENT_NAME"
-COLUMN course_id      FORMAT A10 HEADING "COURSE_ID"
-COLUMN enrollment_date FORMAT A12 HEADING "ENROLL_DATE"
-
-PROMPT ===== Initial Data =====
 SELECT * FROM StudentEnrollments;
 
--------------------------------------------------------
--- Part A (simulate deadlock – must run in 2 sessions)
--------------------------------------------------------
-PROMPT ===== Part A: Deadlock Demo =====
-PROMPT Transaction 2 aborted due to detected deadlock.
+-- Part A: Deadlock simulation
+-- Session 1:
+START TRANSACTION;
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-10' WHERE student_id = 1;
 
--------------------------------------------------------
--- Part B (MVCC demo – simulate using isolation levels)
--------------------------------------------------------
-PROMPT ===== Part B: MVCC Demo =====
-UPDATE StudentEnrollments SET enrollment_date = DATE '2024-07-10' WHERE student_id = 1;
-COMMIT;
+-- Session 2:
+START TRANSACTION;
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-15' WHERE student_id = 2;
 
+-- Then each session tries to update the row locked by the other:
+-- Session 1:
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-20' WHERE student_id = 2;
+
+-- Session 2:
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-25' WHERE student_id = 1;
+
+-- One of the transactions will be rolled back automatically due to deadlock.
+
+-- Part B: MVCC simulation
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+-- Session 1:
+START TRANSACTION;
 SELECT * FROM StudentEnrollments WHERE student_id = 1;
 
--------------------------------------------------------
--- Part C (Compare Locking vs MVCC)
--------------------------------------------------------
-PROMPT ===== Part C: Locking vs MVCC =====
-UPDATE StudentEnrollments SET enrollment_date = DATE '2024-07-15' WHERE student_id = 2;
+-- Session 2:
+START TRANSACTION;
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-10' WHERE student_id = 1;
 COMMIT;
 
-SELECT * FROM StudentEnrollments WHERE student_id IN (2,3);
+-- Session 1 still sees old value until it commits
+COMMIT;
+
+-- Part C: Locking vs MVCC c
